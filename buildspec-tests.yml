@@ -1,0 +1,22 @@
+
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo "Test Phase.."
+      - ls
+      - echo "PR_ID=$PR_ID"
+      - echo "REPO_NAME=$REPO_NAME"
+      - echo "revisionId=$revisionId"
+  post_build:
+    commands:
+      - echo "Tests completed successfully."
+      - echo "PR_ID=$PR_ID"
+      - filename="${PR_ID}_tests_status.txt"
+      - echo "success" > "$filename"
+      - ls
+      - cat "$filename"
+artifacts:
+  files:
+    - "$filename"

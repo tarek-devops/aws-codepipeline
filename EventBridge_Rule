@@ -1,0 +1,16 @@
+Input path
+{
+  "prId": "$.detail.pullRequestId",
+  "repoName": "$.detail.repositoryNames[0]",
+  "revisionId": "$.detail.revisionId"
+}
+
+Template
+
+{
+  "variables": [
+    {"name":"PR_ID","value":"<prId>"},
+    {"name":"REPO_NAME","value":"<repoName>"},
+	{"name":"revisionId","value":"<revisionId>"}
+  ]
+}

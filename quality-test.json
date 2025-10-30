@@ -1,0 +1,99 @@
+{
+  "pipeline": {
+    "name": "quality-test",
+    "pipelineType": "V2",
+    "roleArn": "arn:aws:iam::940482443826:role/service-role/AWSCodePipelineServiceRole-eu-west-1-quality-test",
+    "artifactStore": {
+      "type": "S3",
+      "location": "codepipeline-eu-west-1-733d17fa72d9-4f86-a8ca-b0bc11f882a8"
+    },
+    "variables": [
+      { "name": "PR_ID", "defaultValue": "0" },
+      { "name": "REPO_NAME", "defaultValue": "0" },
+      { "name": "revisionId", "defaultValue": "0" }
+    ],
+    "stages": [
+      {
+        "name": "Source",
+        "actions": [
+          {
+            "name": "Source",
+            "actionTypeId": {
+              "category": "Source",
+              "owner": "AWS",
+              "provider": "CodeCommit",
+              "version": "1"
+            },
+            "configuration": {
+              "RepositoryName": "my_repo",
+              "BranchName": "main",
+              "PollForSourceChanges": "false"
+            },
+            "outputArtifacts": [{ "name": "SourceArtifact" }],
+            "runOrder": 1
+          }
+        ]
+      },
+      {
+        "name": "Build",
+        "actions": [
+          {
+            "name": "Run-Tests",
+            "actionTypeId": {
+              "category": "Build",
+              "owner": "AWS",
+              "provider": "CodeBuild",
+              "version": "1"
+            },
+            "configuration": {
+              "ProjectName": "run-tests-build",
+              "EnvironmentVariables": "[{\"name\":\"PR_ID\",\"value\":\"#{variables.PR_ID}\",\"type\":\"PLAINTEXT\"}]"
+            },
+            "inputArtifacts": [{ "name": "SourceArtifact" }],
+            "outputArtifacts": [{ "name": "BuildArtifact" }],
+            "runOrder": 1
+          },
+          {
+            "name": "Run-Linting",
+            "actionTypeId": {
+              "category": "Build",
+              "owner": "AWS",
+              "provider": "CodeBuild",
+              "version": "1"
+            },
+            "configuration": {
+              "ProjectName": "run-lint-build",
+              "EnvironmentVariables": "[{\"name\":\"PR_ID\",\"value\":\"#{variables.PR_ID}\",\"type\":\"PLAINTEXT\"}]"
+            },
+            "inputArtifacts": [{ "name": "SourceArtifact" }],
+            "outputArtifacts": [{ "name": "LintingArtifact" }],
+            "runOrder": 1
+          }
+        ]
+      },
+      {
+        "name": "approve",
+        "actions": [
+          {
+            "name": "approve",
+            "actionTypeId": {
+              "category": "Invoke",
+              "owner": "AWS",
+              "provider": "Lambda",
+              "version": "1"
+            },
+            "configuration": {
+              "FunctionName": "approve-codecommit-pr",
+              "UserParameters": "{\"PR_ID\":\"#{variables.PR_ID}\",\"REPO_NAME\":\"#{variables.REPO_NAME}\",\"revisionId\":\"#{variables.revisionId}\"}"
+            },
+            "inputArtifacts": [{ "name": "LintingArtifact" },
+              { "name": "BuildArtifact" }
+          ],
+            "runOrder": 1
+          }
+        ]
+      }
+    ],
+    "version": 1
+  }
+}
